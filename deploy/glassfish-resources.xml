@@ -48,7 +48,8 @@
         <property name="databaseName" value="globaltrade_scm"/>
         <property name="user" value="root"/>
         <property name="password" value="8GFG0LMFDD1"/>
-        <property name="useSSL" value="true"/>
+        <property name="useSSL" value="false"/>
+        <property name="allowPublicKeyRetrieval" value="true"/>
         <property name="serverTimezone" value="UTC"/>
         <property name="characterEncoding" value="utf8mb4"/>
     </jdbc-connection-pool>

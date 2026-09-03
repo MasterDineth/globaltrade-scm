@@ -15,7 +15,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * {@code @Provider} in this package automatically.
  */
 @ApplicationScoped
-@BasicAuthenticationMechanismDefinition(realmName="supplyChainRealm")
+@BasicAuthenticationMechanismDefinition
 @DeclareRoles({"LOGISTICS_COORDINATOR", "SYSTEM_ADMIN"})
 @ApplicationPath("/api")
 public class ApplicationConfig extends Application {

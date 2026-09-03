@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlobalTrade Logistics Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="overlay active">
+        <div class="glass-panel login-box">
+            <div class="logo">
+                <span class="icon">🌍</span>
+                <h1>GlobalTrade SCM</h1>
+            </div>
+            <h2>Welcome Back</h2>
+            <p>Sign in to access your logistics portal</p>
+            
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required placeholder="admin">
+                </div>
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="password">
+                </div>
+                <div id="login-error" class="error-message"></div>
+                <button type="submit" class="btn-primary">Authenticate</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="dashboard-container hidden">
+        <!-- Sidebar Navigation -->
+        <aside class="glass-panel sidebar">
+            <div class="logo">
+                <span class="icon">🌍</span>
+                <h2>GlobalTrade</h2>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-target="overview">
+                    <span class="nav-icon">📊</span> Overview
+                </a>
+                <a href="#" class="nav-item" data-target="shipments">
+                    <span class="nav-icon">🚢</span> Active Shipments
+                </a>
+                <a href="#" class="nav-item" data-target="inventory">
+                    <span class="nav-icon">📦</span> Low Stock Alerts
+                </a>
+                <a href="#" class="nav-item" data-target="vendors">
+                    <span class="nav-icon">🤝</span> Vendors
+                </a>
+            </nav>
+            
+            <div class="user-profile">
+                <div class="avatar">U</div>
+                <div class="user-info">
+                    <span id="display-user">User</span>
+                    <button id="logout-btn" class="btn-text">Logout</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="topbar">
+                <h1>Logistics Overview</h1>
+                <div class="actions">
+                    <button class="btn-icon">🔔 <span class="badge">3</span></button>
+                    <button class="btn-icon">⚙️</button>
+                </div>
+            </header>
+
+            <!-- Overview Section -->
+            <section id="section-overview" class="content-section active">
+                <div class="stats-grid">
+                    <div class="glass-card stat-card">
+                        <h3>Active Shipments</h3>
+                        <div class="stat-value" id="stat-shipments">-</div>
+                        <div class="stat-trend positive">↑ Live Tracking</div>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <h3>Low Stock Items</h3>
+                        <div class="stat-value" id="stat-inventory">-</div>
+                        <div class="stat-trend negative">Attention Required</div>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <h3>System Status</h3>
+                        <div class="stat-value text-success">Online</div>
+                        <div class="stat-trend">All services operational</div>
+                    </div>
+                </div>
+
+                <div class="data-panels">
+                    <!-- Recent Shipments Panel -->
+                    <div class="glass-panel data-panel">
+                        <div class="panel-header">
+                            <h2>Recent Active Shipments</h2>
+                            <button class="btn-secondary btn-sm" id="refresh-shipments">Refresh</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Tracking #</th>
+                                        <th>Status</th>
+                                        <th>Origin</th>
+                                        <th>Destination</th>
+                                        <th>Est. Delivery</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shipments-body">
+                                    <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Low Stock Panel -->
+                    <div class="glass-panel data-panel">
+                        <div class="panel-header">
+                            <h2>Inventory Alerts</h2>
+                            <button class="btn-secondary btn-sm" id="refresh-inventory">Refresh</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Name</th>
+                                        <th>Current Level</th>
+                                        <th>Reorder Point</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventory-body">
+                                    <tr><td colspan="5" class="text-center">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

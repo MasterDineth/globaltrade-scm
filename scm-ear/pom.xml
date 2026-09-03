@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.globaltrade.scm</groupId>
+        <artifactId>globaltrade-scm-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>scm-ear</artifactId>
+    <packaging>ear</packaging>
+    <name>GlobalTrade SCM :: EAR Assembly</name>
+    <description>
+        Deployable EAR bundling scm-ejb and scm-web behind one context
+        root — the "split directory structure ... optimized packaging and
+        deployment configuration for modular supply chain systems"
+        deliverable. See docs/CRITICAL_ANALYSIS.md, "Component
+        organization and deployment strategy", and docs/DEPLOYMENT_GUIDE.md
+        for the asadmin deployment steps.
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.globaltrade.scm</groupId>
+            <artifactId>scm-ejb</artifactId>
+            <type>ejb</type>
+        </dependency>
+        <dependency>
+            <groupId>com.globaltrade.scm</groupId>
+            <artifactId>scm-web</artifactId>
+            <type>war</type>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>globaltrade-scm</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-ear-plugin</artifactId>
+                <configuration>
+                    <!-- Jakarta EE 10 platform version; application.xml
+                         tracks the PLATFORM version number (unlike
+                         component descriptors such as ejb-jar.xml/web.xml,
+                         which track their own component spec version —
+                         EJB 4.0, Servlet 6.0 — independently of it). -->
+                    <version>10</version>
+                    <defaultLibBundleDir>lib</defaultLibBundleDir>
+                    <!-- A hand-written application.xml already exists
+                         under src/main/application/META-INF — do not let
+                         the plugin generate/overwrite it. -->
+                    <generateApplicationXml>false</generateApplicationXml>
+                    <modules>
+                        <ejbModule>
+                            <groupId>com.globaltrade.scm</groupId>
+                            <artifactId>scm-ejb</artifactId>
+                            <!-- Explicit bundleFileName so the jar this
+                                 plugin actually produces matches the
+                                 <ejb>scm-ejb.jar</ejb> module reference
+                                 hand-written into application.xml, rather
+                                 than relying on Maven's default
+                                 artifactId-version.jar naming, which would
+                                 not match it. -->
+                            <bundleFileName>scm-ejb.jar</bundleFileName>
+                        </ejbModule>
+                        <webModule>
+                            <groupId>com.globaltrade.scm</groupId>
+                            <artifactId>scm-web</artifactId>
+                            <bundleFileName>scm-web.war</bundleFileName>
+                            <contextRoot>/scm</contextRoot>
+                        </webModule>
+                    </modules>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

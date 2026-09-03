@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Created-By: IntelliJ IDEA
+Built-By: MasterDineth
+Build-Jdk: Oracle OpenJDK 26.0.1
+

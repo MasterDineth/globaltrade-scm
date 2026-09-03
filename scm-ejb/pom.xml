@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.globaltrade.scm</groupId>
+        <artifactId>globaltrade-scm-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>scm-ejb</artifactId>
+    <packaging>ejb</packaging>
+    <name>GlobalTrade SCM :: EJB Business Tier</name>
+    <description>
+        Timer services, interceptors, CMT/BMT transaction management, JAAS
+        security and exception-recovery business logic. See
+        docs/CRITICAL_ANALYSIS.md for the rationale behind each package.
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.globaltrade.scm</groupId>
+            <artifactId>scm-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+
+        <!-- Test scope: plain JUnit 5 unit tests (recovery/, security/) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            Arquillian in-container integration tests (it/ package). The
+            BOM-managed arquillian-junit5-container coordinate is stable;
+            the GlassFish container adapter below is the one dependency in
+            this file most likely to need a version bump to match whichever
+            GlassFish 7.x point release is actually deployed to — see
+            docs/DEPLOYMENT_GUIDE.md, "Running the integration tests", for
+            how to point Arquillian at a different adapter/version if this
+            one does not resolve against the target GlassFish install.
+        -->
+        <dependency>
+            <groupId>org.jboss.arquillian.junit5</groupId>
+            <artifactId>arquillian-junit5-container</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-glassfish-remote-3.1</artifactId>
+            <version>1.0.2</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>scm-ejb</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-ejb-plugin</artifactId>
+                <configuration>
+                    <ejbVersion>4.0</ejbVersion>
+                    <!--
+                        Generates scm-ejb-client.jar: business/local... no,
+                        REMOTE interfaces plus any classes they reference
+                        (here, the scm-common DTOs and enums), WITHOUT bean
+                        implementation classes, entities, security or
+                        recovery internals. This is the "split directory
+                        structure for EJB components" deliverable in
+                        practice: a standalone carrier- or vendor-integration
+                        client project depends on scm-ejb-client (thin,
+                        interfaces-and-DTOs-only) rather than on scm-ejb
+                        itself (which would drag in JPA entities, the JAAS
+                        login module and every local-only interface it has
+                        no business seeing). See
+                        docs/CRITICAL_ANALYSIS.md, "Component organization
+                        and deployment strategy", for a worked remote-client
+                        bootstrap example against this artifact.
+                    -->
+                    <generateClient>true</generateClient>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*IT.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/*IT.java</include>
+                    </includes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE glassfish-web-app PUBLIC "-//GlassFish.org//DTD GlassFish Application Server 3.1 Servlet 3.0//EN"
+        "http://glassfish.org/dtds/glassfish-web-app_3_0-1.dtd">
+<!--
+    Kept minimal deliberately: the realm named in web.xml's
+    <realm-name>supplyChainRealm</realm-name> is configured as the
+    GlassFish domain's default realm (see docs/DEPLOYMENT_GUIDE.md), so no
+    per-application realm override is needed here, and
+    principal-to-role-mapping is centralized once, EAR-wide, in
+    glassfish-application.xml rather than duplicated per web/ejb module.
+-->
+<glassfish-web-app>
+    <context-root>/scm</context-root>
+</glassfish-web-app>

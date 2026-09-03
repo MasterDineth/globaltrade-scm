@@ -1,0 +1,6 @@
+com\globaltrade\scm\common\dto\VendorPerformanceSummary.class
+com\globaltrade\scm\common\enums\ShipmentStatus.class
+com\globaltrade\scm\common\dto\ShipmentTrackingResult.class
+com\globaltrade\scm\common\enums\CustomsDocumentStatus.class
+com\globaltrade\scm\common\enums\CustomsDocumentType.class
+com\globaltrade\scm\common\enums\UserRole.class

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Minimal CDI activation. This module's cross-cutting concerns
+    (AuditLoggingInterceptor, PerformanceMonitoringInterceptor,
+    SecurityAuditInterceptor, VendorDataValidationInterceptor) are bound
+    using the classic EJB-spec mechanisms — @Interceptors and, for
+    AuditLoggingInterceptor, an XML default-interceptor binding in
+    ejb-jar.xml — rather than CDI's @InterceptorBinding, so none of that
+    actually requires this file to be present. It is included anyway for
+    portability/completeness: any future component that does want a CDI
+    feature (@Inject, an @ApplicationScoped bean, a CDI event) needs this
+    module recognized as a bean archive, and an explicit, minimal beans.xml
+    with "annotated" discovery is safer than relying on an implicit empty
+    file being treated as "annotated" by every container version.
+-->
+<beans xmlns="https://jakarta.ee/xml/ns/jakartaee"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/beans_4_0.xsd"
+       bean-discovery-mode="annotated"
+       version="4.0">
+</beans>

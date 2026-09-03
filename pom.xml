@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.globaltrade.scm</groupId>
+  <artifactId>globaltrade-scm-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>GlobalTrade Logistics :: Supply Chain Management Platform (Parent)</name>
+  <description>
+    Modernized Jakarta EE supply chain management platform for GlobalTrade Logistics
+    Corporation. Split multi-module layout: scm-common (shared model), scm-ejb
+    (business tier: timers, interceptors, transactions, security, exception
+    handling), scm-web (JAX-RS web tier), scm-ear (deployable EAR).
+  </description>
+
+  <modules>
+    <module>scm-common</module>
+    <module>scm-ejb</module>
+    <module>scm-web</module>
+    <module>scm-ear</module>
+  </modules>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>17</maven.compiler.release>
+
+    <!-- Target platform: Jakarta EE 10 (satisfies "Java EE 8+, Jakarta EE acceptable"),
+         deployed to GlassFish 7.x, which is the first GlassFish line with full
+         Jakarta EE 10 / jakarta.* namespace support. -->
+    <jakartaee.version>10.0.0</jakartaee.version>
+
+    <junit.version>5.10.2</junit.version>
+    <mockito.version>5.11.0</mockito.version>
+    <arquillian.version>1.7.0.Final</arquillian.version>
+    <mysql.connector.version>8.3.0</mysql.connector.version>
+
+    <scm.project.version>1.0.0-SNAPSHOT</scm.project.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- Internal modules -->
+      <dependency>
+        <groupId>com.globaltrade.scm</groupId>
+        <artifactId>scm-common</artifactId>
+        <version>${scm.project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.globaltrade.scm</groupId>
+        <artifactId>scm-ejb</artifactId>
+        <version>${scm.project.version}</version>
+        <type>ejb</type>
+      </dependency>
+      <dependency>
+        <groupId>com.globaltrade.scm</groupId>
+        <artifactId>scm-web</artifactId>
+        <version>${scm.project.version}</version>
+        <type>war</type>
+      </dependency>
+
+      <!-- Jakarta EE 10 full platform API, provided by GlassFish at runtime -->
+      <dependency>
+        <groupId>jakarta.platform</groupId>
+        <artifactId>jakarta.jakartaee-api</artifactId>
+        <version>${jakartaee.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <!-- Testing -->
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>${mockito.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-junit-jupiter</artifactId>
+        <version>${mockito.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jboss.arquillian</groupId>
+        <artifactId>arquillian-bom</artifactId>
+        <version>${arquillian.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- MySQL JDBC driver: used by the GlassFish connection pool and by
+           Arquillian in-container tests; not bundled inside the EAR
+           (provided by the app-server-level JDBC pool instead). -->
+      <dependency>
+        <groupId>com.mysql</groupId>
+        <artifactId>mysql-connector-j</artifactId>
+        <version>${mysql.connector.version}</version>
+        <scope>provided</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.13.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-ejb-plugin</artifactId>
+          <version>3.2.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>3.4.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-ear-plugin</artifactId>
+          <version>3.3.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.2.5</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>3.2.5</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.globaltrade.scm</groupId>
+        <artifactId>globaltrade-scm-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>scm-web</artifactId>
+    <packaging>war</packaging>
+    <name>GlobalTrade SCM :: Web Tier (JAX-RS)</name>
+    <description>
+        REST facade over the EJB business tier. Depends on scm-ejb directly
+        with `provided` scope (not scm-ejb-client, and not compile scope):
+        this module is packaged into the same EAR as scm-ejb and calls its
+        LOCAL interfaces in-process, so it needs the full artifact to
+        compile against, but must not bundle a second copy of scm-ejb's
+        classes into WEB-INF/lib — the EAR's own ejb module already
+        provides them on the shared application classloader, and having
+        both present is a classic duplicate-class Java EE classloading
+        failure. See scm-ejb's own pom.xml for when the thin client jar
+        (scm-ejb-client) is the right dependency instead — namely, for a
+        consumer that is NOT packaged into this same EAR.
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.globaltrade.scm</groupId>
+            <artifactId>scm-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.globaltrade.scm</groupId>
+            <artifactId>scm-ejb</artifactId>
+            <type>ejb</type>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.platform</groupId>
+            <artifactId>jakarta.jakartaee-api</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>scm-web</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

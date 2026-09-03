@@ -1,0 +1,3 @@
+com\globaltrade\scm\recovery\ExceptionRecoveryManagerTest.class
+com\globaltrade\scm\security\SecurityUtilTest.class
+com\globaltrade\scm\it\OrderProcessingWorkflowIT.class

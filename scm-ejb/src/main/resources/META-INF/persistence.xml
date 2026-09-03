@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+    <!--
+        Persistence unit name "scmPU" is referenced verbatim by every
+        @PersistenceContext(unitName = "scmPU") across scm-ejb — keep this
+        name in sync if it is ever changed.
+
+        exclude-unlisted-classes=false: the provider scans this jar for
+        @Entity classes automatically rather than requiring every entity to
+        be listed by hand, which is the right default for a module where
+        all nine entities already live under one package
+        (com.globaltrade.scm.entity) in the same jar as this file.
+    -->
+    <persistence-unit name="scmPU" transaction-type="JTA">
+        <jta-data-source>jdbc/SCMDataSource</jta-data-source>
+        <exclude-unlisted-classes>false</exclude-unlisted-classes>
+
+        <properties>
+            <!-- Schema is managed explicitly via db/schema.sql (DBA-controlled
+                 DDL with FK constraints and indexes), not JPA schema
+                 generation — see docs/DEPLOYMENT_GUIDE.md. -->
+            <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
+
+            <!-- EclipseLink is GlassFish's bundled default JPA provider. -->
+            <property name="eclipselink.logging.level" value="INFO"/>
+            <property name="eclipselink.logging.level.sql" value="FINE"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+
+            <!--
+                Shared (L2) entity cache disabled by default. In a
+                globally-distributed, multi-node GlassFish cluster (the
+                target deployment topology — see business requirement
+                "99.9% uptime for global operations"), EclipseLink's default
+                shared cache is scoped to a single JVM: without additional
+                cache-coordination configuration (RMI or JMS-based), a
+                second node's cached copy of, say, an InventoryItem's
+                quantityOnHand can silently go stale the instant a different
+                node commits a change to that same row. Disabling the shared
+                cache trades some read performance for read-your-writes
+                consistency across the whole cluster without requiring
+                cache-coordination infrastructure to be stood up and kept
+                correctly configured. Re-enabling it with cache coordination
+                is listed as a future optimization in
+                docs/CRITICAL_ANALYSIS.md, "Timer service performance
+                implications for supply chain efficiency."
+            -->
+            <property name="eclipselink.cache.shared.default" value="false"/>
+        </properties>
+    </persistence-unit>
+</persistence>

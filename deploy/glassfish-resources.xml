@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE resources PUBLIC "-//GlassFish.org//DTD GlassFish Application Server 3.1 Resource Definitions//EN"
+        "http://glassfish.org/dtds/glassfish-resources_1_5.dtd">
+<!--
+    Server-level resource definitions, deployed to the GlassFish domain
+    independently of the application EAR via `asadmin add-resources` (see
+    docs/DEPLOYMENT_GUIDE.md) — NOT bundled inside globaltrade-scm.ear.
+    This split is deliberate: a JDBC pool and its credentials are an
+    environment concern (different per dev/staging/production domain),
+    while the EAR is an environment-agnostic build artifact that only ever
+    references the pool by its stable JNDI name, jdbc/SCMDataSource. Baking
+    environment-specific connection details into the EAR itself would mean
+    rebuilding the application to promote it between environments, which is
+    exactly the coupling this split avoids.
+-->
+<resources>
+    <jdbc-connection-pool
+            name="SCMConnectionPool"
+            datasource-classname="com.mysql.cj.jdbc.MysqlXADataSource"
+            res-type="javax.sql.XADataSource"
+            is-isolation-level-guaranteed="true"
+            transaction-isolation-level="read-committed"
+            is-connection-validation-required="true"
+            connection-validation-method="auto-commit"
+            steady-pool-size="16"
+            max-pool-size="64"
+            max-wait-time-in-millis="10000"
+            idle-timeout-in-seconds="300"
+            pool-resize-quantity="4">
+        <!--
+            READ COMMITTED, not the JDBC/InnoDB default REPEATABLE READ:
+            deliberate choice for a system whose read-heavy hot paths
+            (trackShipment, getVendorPerformanceSummary) are NOT_SUPPORTED
+            (no transaction, effectively autocommit reads) while writes are
+            short, single/few-row updates guarded by @Version optimistic
+            locking (see Shipment.version) rather than by long-held
+            pessimistic locks or REPEATABLE READ's snapshot semantics.
+            READ COMMITTED avoids REPEATABLE READ's gap-locking overhead
+            under concurrent writers across a globally-distributed
+            deployment without weakening the guarantee this application
+            actually depends on for correctness (optimistic-lock version
+            checks, not transaction isolation level, are what prevent lost
+            updates here). See docs/CRITICAL_ANALYSIS.md, "Transaction
+            isolation levels for concurrent global operations."
+        -->
+        <property name="serverName" value="localhost"/>
+        <property name="portNumber" value="3306"/>
+        <property name="databaseName" value="globaltrade_scm"/>
+        <property name="user" value="root"/>
+        <property name="password" value="8GFG0LMFDD1"/>
+        <property name="useSSL" value="true"/>
+        <property name="serverTimezone" value="UTC"/>
+        <property name="characterEncoding" value="utf8mb4"/>
+    </jdbc-connection-pool>
+
+    <jdbc-resource pool-name="SCMConnectionPool" jndi-name="jdbc/SCMDataSource"/>
+</resources>

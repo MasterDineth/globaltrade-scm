@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ejb-jar xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/ejb-jar_4_0.xsd"
+         version="4.0">
+
+    <description>
+        GlobalTrade Logistics supply chain platform, EJB business tier.
+        Session beans, timers and their business interfaces are all
+        annotation-configured (jakarta.ejb.Stateless / @Singleton /
+        @Schedule / @Local / @Remote); this descriptor is reserved for the
+        handful of concerns that annotations cannot express portably —
+        see docs/CRITICAL_ANALYSIS.md, "Deployment descriptor optimization
+        with packaging strategies for modular supply chain systems", for
+        the full annotations-vs-XML rationale.
+    </description>
+    <display-name>scm-ejb</display-name>
+
+    <interceptors>
+        <interceptor>
+            <interceptor-class>com.globaltrade.scm.interceptor.AuditLoggingInterceptor</interceptor-class>
+        </interceptor>
+    </interceptors>
+
+    <assembly-descriptor>
+        <!--
+            Declares the full set of application roles referenced by
+            @RolesAllowed across the service layer (see
+            com.globaltrade.scm.common.enums.UserRole, the single source of
+            truth these names are kept in sync with by convention, since
+            Jakarta EE declarative security cannot reference a Java enum
+            directly). glassfish-application.xml maps each of these to the
+            matching group principal produced by SupplyChainLoginModule.
+        -->
+        <security-role>
+            <role-name>ADMIN</role-name>
+        </security-role>
+        <security-role>
+            <role-name>LOGISTICS_COORDINATOR</role-name>
+        </security-role>
+        <security-role>
+            <role-name>CUSTOMS_AGENT</role-name>
+        </security-role>
+        <security-role>
+            <role-name>WAREHOUSE_MANAGER</role-name>
+        </security-role>
+        <security-role>
+            <role-name>VENDOR_REPRESENTATIVE</role-name>
+        </security-role>
+        <security-role>
+            <role-name>CUSTOMER</role-name>
+        </security-role>
+
+        <!--
+            DEFAULT (module-wide) interceptor binding: ejb-name "*" is the
+            EJB-spec wildcard meaning "every session and message-driven bean
+            in this ejb-jar," applied without any per-bean opt-in. This is
+            the one interceptor binding in the whole application that is
+            deliberately declared in XML rather than with @Interceptors —
+            see AuditLoggingInterceptor's own javadoc for why a general
+            audit trail belongs at the module boundary rather than as a
+            per-bean annotation a future developer could forget to add.
+
+            Binding order for any given business method is therefore, from
+            outermost to innermost: this XML default interceptor, then any
+            class-level @Interceptors on the target bean, then any
+            method-level @Interceptors — the EJB-spec default ordering,
+            which this descriptor relies on rather than overriding via
+            <interceptor-order>.
+        -->
+        <interceptor-binding>
+            <ejb-name>*</ejb-name>
+            <interceptor-class>com.globaltrade.scm.interceptor.AuditLoggingInterceptor</interceptor-class>
+        </interceptor-binding>
+    </assembly-descriptor>
+</ejb-jar>

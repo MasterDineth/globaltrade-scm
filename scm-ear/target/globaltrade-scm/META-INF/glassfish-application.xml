@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE glassfish-application PUBLIC "-//GlassFish.org//DTD GlassFish Application Server 3.1 Java EE Application 6.0//EN"
+        "http://glassfish.org/dtds/glassfish-application_6_0-1.dtd">
+<!--
+    Maps each portable security-role (declared in application.xml,
+    ejb-jar.xml and web.xml — kept in sync with
+    com.globaltrade.scm.common.enums.UserRole by convention) to the
+    matching principal name produced by SupplyChainLoginModule via
+    SupplyChainPrincipal. Centralized once, EAR-wide, here rather than
+    duplicated in glassfish-ejb-jar.xml and glassfish-web.xml individually
+    — one mapping table for the whole application is easier to audit for
+    a security review than the same six lines copy-pasted across modules.
+
+    Uses <principal-name>, not <group-name>: SupplyChainPrincipal is a
+    plain java.security.Principal, not a Group-marker type — an earlier
+    revision used java.security.acl.Group for the role principal
+    specifically so <group-name> mapping would apply, but that JDK package
+    has been fully removed (not merely deprecated) since Java 9, confirmed
+    by compiling this project's security package standalone against a real
+    JDK 21. <principal-name> mapping does not require any particular
+    marker type in the Subject, only a name match, which is what this
+    login module actually provides.
+
+    NOTE ON PORTABILITY: like glassfish-ejb-jar.xml, this is a
+    GlassFish-proprietary descriptor; re-validate against the specific
+    GlassFish 7.x point release used for deployment — see
+    docs/DEPLOYMENT_GUIDE.md.
+-->
+<glassfish-application>
+    <security-role-mapping>
+        <role-name>ADMIN</role-name>
+        <principal-name>ADMIN</principal-name>
+    </security-role-mapping>
+    <security-role-mapping>
+        <role-name>LOGISTICS_COORDINATOR</role-name>
+        <principal-name>LOGISTICS_COORDINATOR</principal-name>
+    </security-role-mapping>
+    <security-role-mapping>
+        <role-name>CUSTOMS_AGENT</role-name>
+        <principal-name>CUSTOMS_AGENT</principal-name>
+    </security-role-mapping>
+    <security-role-mapping>
+        <role-name>WAREHOUSE_MANAGER</role-name>
+        <principal-name>WAREHOUSE_MANAGER</principal-name>
+    </security-role-mapping>
+    <security-role-mapping>
+        <role-name>VENDOR_REPRESENTATIVE</role-name>
+        <principal-name>VENDOR_REPRESENTATIVE</principal-name>
+    </security-role-mapping>
+    <security-role-mapping>
+        <role-name>CUSTOMER</role-name>
+        <principal-name>CUSTOMER</principal-name>
+    </security-role-mapping>
+</glassfish-application>

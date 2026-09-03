@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE glassfish-ejb-jar PUBLIC "-//GlassFish.org//DTD GlassFish Application Server 3.1 EJB 3.1//EN"
+        "http://glassfish.org/dtds/glassfish-ejb-jar_3_1-1.dtd">
+<!--
+    GlassFish-proprietary EJB tuning, kept deliberately small: everything
+    portable (JNDI names, transaction/security metadata) already lives in
+    the standard ejb-jar.xml or in annotations. What is here is genuinely
+    server-specific bean-pool sizing — see docs/CRITICAL_ANALYSIS.md,
+    "Resource pooling strategies for supply chain applications" — and
+    cannot be expressed through the portable descriptor at all.
+
+    NOTE ON PORTABILITY: unlike ejb-jar.xml (a Jakarta EE-specified,
+    versioned XSD), glassfish-ejb-jar.xml is GlassFish's own descriptor and
+    its exact DTD/element set has shifted across GlassFish major versions
+    more than the portable specs have. Re-validate this file's syntax
+    against the specific GlassFish 7.x point release used for deployment
+    (asadmin will refuse to deploy on a genuine schema mismatch) — see
+    docs/DEPLOYMENT_GUIDE.md.
+-->
+<glassfish-ejb-jar>
+    <enterprise-beans>
+        <!--
+            ShipmentTrackingServiceBean is on the hottest path in the
+            system: every carrier webhook (recordCarrierStatusUpdate),
+            every customer/vendor tracking lookup (trackShipment), and the
+            15-minute polling timer all funnel through it. A larger steady
+            pool avoids paying instance-creation cost on every burst of
+            carrier webhooks.
+        -->
+        <ejb>
+            <ejb-name>ShipmentTrackingServiceBean</ejb-name>
+            <bean-pool>
+                <steady-pool-size>10</steady-pool-size>
+                <resize-quantity>5</resize-quantity>
+                <max-pool-size>64</max-pool-size>
+                <pool-idle-timeout-in-seconds>600</pool-idle-timeout-in-seconds>
+            </bean-pool>
+        </ejb>
+
+        <!--
+            CustomsDocumentationServiceBean and OrderProcessingServiceBean
+            are lower-volume, staff-driven workflows (a customs agent or
+            coordinator working through a queue of documents/orders, not a
+            high-frequency automated feed) — a small steady pool avoids
+            holding idle instances, and their EntityManager /
+            UserTransaction resources, for capacity this bean rarely needs.
+        -->
+        <ejb>
+            <ejb-name>CustomsDocumentationServiceBean</ejb-name>
+            <bean-pool>
+                <steady-pool-size>2</steady-pool-size>
+                <max-pool-size>16</max-pool-size>
+            </bean-pool>
+        </ejb>
+        <ejb>
+            <ejb-name>OrderProcessingServiceBean</ejb-name>
+            <bean-pool>
+                <steady-pool-size>2</steady-pool-size>
+                <max-pool-size>16</max-pool-size>
+            </bean-pool>
+        </ejb>
+    </enterprise-beans>
+</glassfish-ejb-jar>

@@ -1,6 +1,5 @@
 package com.globaltrade.scm.entity;
 
-import com.globaltrade.scm.common.enums.UserRole;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -33,12 +32,22 @@ public class SystemUser implements Serializable {
     @Column(name = "full_name", length = 150)
     private String fullName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 32)
-    private UserRole role;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "role_id")
+    private UserRoleEntity role;
 
     @Column(name = "active", nullable = false)
     private boolean active = true;
+
+    public SystemUser() {
+    }
+
+    public SystemUser(String username, String passwordHash, String fullName, UserRoleEntity role) {
+        this.username = username;
+        this.passwordHash = passwordHash;
+        this.fullName = fullName;
+        this.role = role;
+    }
 
     public Long getId() {
         return id;
@@ -72,11 +81,11 @@ public class SystemUser implements Serializable {
         this.fullName = fullName;
     }
 
-    public UserRole getRole() {
+    public UserRoleEntity getRole() {
         return role;
     }
 
-    public void setRole(UserRole role) {
+    public void setRole(UserRoleEntity role) {
         this.role = role;
     }
 

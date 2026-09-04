@@ -28,4 +28,10 @@ public interface InventoryManagementServiceLocal {
     void replenishStock(String sku, int quantityToAdd, String sourceReference);
 
     List<InventoryItem> findBelowReorderThreshold();
+
+    List<InventoryItem> findAll();
+
+    InventoryItem createItem(InventoryItem item);
+
+    InventoryItem updateItem(String sku, InventoryItem item);
 }

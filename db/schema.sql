@@ -2,24 +2,6 @@
 -- GlobalTrade Logistics Corporation -- Supply Chain Management Platform
 -- MySQL 8.0+ DDL
 -- =============================================================================
--- Hand-written and DBA-controlled rather than JPA-schema-generated (see
--- persistence.xml, jakarta.persistence.schema-generation.database.action =
--- "none") so that foreign keys, indexes and default-value semantics are
--- explicit and reviewable rather than implicit in provider behavior that can
--- change between EclipseLink versions.
---
--- Every table, column and index below corresponds 1:1 to a JPA @Table /
--- @Column / @Index / @UniqueConstraint / @JoinColumn annotation in
--- scm-ejb/src/main/java/com/globaltrade/scm/entity -- if the two ever
--- disagree, this file is wrong, not the entity (the entity is what actually
--- executes against the database and therefore what has to be kept
--- authoritative).
---
--- InnoDB throughout: this is a transactional, foreign-keyed, high-integrity
--- schema (customs/trade audit trail, financial-adjacent inventory counts) --
--- MyISAM's lack of foreign-key enforcement and transaction support would be
--- actively wrong here, not just a missed optimization.
--- =============================================================================
 
 CREATE DATABASE IF NOT EXISTS globaltrade_scm
     CHARACTER SET utf8mb4
@@ -31,19 +13,52 @@ SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- -----------------------------------------------------------------------------
+-- country
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS country;
+CREATE TABLE country (
+    country_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    code       VARCHAR(2)   NOT NULL,
+    name       VARCHAR(150) NOT NULL,
+    CONSTRAINT uq_country_code UNIQUE (code)
+) ENGINE = InnoDB;
+
+-- -----------------------------------------------------------------------------
+-- user_role
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS user_role;
+CREATE TABLE user_role (
+    role_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name    VARCHAR(32) NOT NULL,
+    CONSTRAINT uq_user_role_name UNIQUE (name)
+) ENGINE = InnoDB;
+
+-- -----------------------------------------------------------------------------
+-- metric_type
+-- -----------------------------------------------------------------------------
+DROP TABLE IF EXISTS metric_type;
+CREATE TABLE metric_type (
+    metric_type_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name           VARCHAR(64) NOT NULL,
+    CONSTRAINT uq_metric_type_name UNIQUE (name)
+) ENGINE = InnoDB;
+
+-- -----------------------------------------------------------------------------
 -- vendor
 -- -----------------------------------------------------------------------------
 DROP TABLE IF EXISTS vendor;
 CREATE TABLE vendor (
     vendor_id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name              VARCHAR(150)    NOT NULL,
-    country           VARCHAR(2)      NOT NULL COMMENT 'ISO 3166-1 alpha-2',
+    country_id        BIGINT UNSIGNED NOT NULL,
     contact_email     VARCHAR(150)    NULL,
     performance_score DOUBLE          NULL DEFAULT 0.0,
     active            BOOLEAN         NOT NULL DEFAULT TRUE,
     created_at        DATETIME(6)     NOT NULL,
-    version           BIGINT          NOT NULL DEFAULT 0 COMMENT 'JPA @Version optimistic lock',
-    KEY idx_vendor_country (country)
+    version           BIGINT          NOT NULL DEFAULT 0,
+    KEY idx_vendor_country (country_id),
+    CONSTRAINT fk_vendor_country FOREIGN KEY (country_id) REFERENCES country (country_id)
+        ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------------------------------
@@ -65,32 +80,26 @@ CREATE TABLE carrier (
 -- -----------------------------------------------------------------------------
 DROP TABLE IF EXISTS shipment;
 CREATE TABLE shipment (
-    shipment_id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    tracking_number     VARCHAR(64)  NOT NULL,
-    origin_country      VARCHAR(2)   NOT NULL,
-    destination_country VARCHAR(2)   NOT NULL,
-    status              VARCHAR(32)  NOT NULL DEFAULT 'CREATED',
-    weight_kg           DOUBLE       NULL,
-    estimated_delivery  DATETIME(6)  NULL,
-    actual_delivery     DATETIME(6)  NULL,
-    vendor_id           BIGINT UNSIGNED NOT NULL,
-    carrier_id          BIGINT UNSIGNED NULL,
-    created_at          DATETIME(6)  NOT NULL,
-    updated_at          DATETIME(6)  NULL,
-    version             BIGINT       NOT NULL DEFAULT 0,
+    shipment_id            BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    tracking_number        VARCHAR(64)  NOT NULL,
+    origin_country_id      BIGINT UNSIGNED NOT NULL,
+    destination_country_id BIGINT UNSIGNED NOT NULL,
+    status                 VARCHAR(32)  NOT NULL DEFAULT 'CREATED',
+    weight_kg              DOUBLE       NULL,
+    estimated_delivery     DATETIME(6)  NULL,
+    actual_delivery        DATETIME(6)  NULL,
+    vendor_id              BIGINT UNSIGNED NOT NULL,
+    carrier_id             BIGINT UNSIGNED NULL,
+    created_at             DATETIME(6)  NOT NULL,
+    updated_at             DATETIME(6)  NULL,
+    version                BIGINT       NOT NULL DEFAULT 0,
     CONSTRAINT uq_shipment_tracking_number UNIQUE (tracking_number),
     KEY idx_shipment_status (status),
-    CONSTRAINT fk_shipment_vendor FOREIGN KEY (vendor_id) REFERENCES vendor (vendor_id)
-        ON DELETE RESTRICT ON UPDATE CASCADE,
-    CONSTRAINT fk_shipment_carrier FOREIGN KEY (carrier_id) REFERENCES carrier (carrier_id)
-        ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT fk_shipment_origin_country FOREIGN KEY (origin_country_id) REFERENCES country (country_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_shipment_dest_country FOREIGN KEY (destination_country_id) REFERENCES country (country_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_shipment_vendor FOREIGN KEY (vendor_id) REFERENCES vendor (vendor_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_shipment_carrier FOREIGN KEY (carrier_id) REFERENCES carrier (carrier_id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE = InnoDB;
--- ON DELETE RESTRICT (not CASCADE) on both FKs: a vendor or carrier being
--- deactivated/removed from active use must never silently delete or orphan
--- historical shipment records -- those records are the audit trail this
--- platform exists partly to guarantee (see AuditLogEntry below). Application
--- code deactivates a Vendor/Carrier (the `active` flag) rather than deleting
--- the row for exactly this reason.
 
 -- -----------------------------------------------------------------------------
 -- inventory_item
@@ -116,17 +125,17 @@ DROP TABLE IF EXISTS performance_metric;
 CREATE TABLE performance_metric (
     performance_metric_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     vendor_id             BIGINT UNSIGNED NOT NULL,
-    metric_type           VARCHAR(64)  NOT NULL COMMENT 'e.g. ON_TIME_DELIVERY_RATE, MANUAL_REVIEW_SCORE',
+    metric_type_id        BIGINT UNSIGNED NOT NULL,
     value                 DOUBLE       NOT NULL,
     recorded_at           DATETIME(6)  NOT NULL,
     KEY idx_metric_vendor (vendor_id),
-    KEY idx_metric_type (metric_type),
-    CONSTRAINT fk_metric_vendor FOREIGN KEY (vendor_id) REFERENCES vendor (vendor_id)
-        ON DELETE RESTRICT ON UPDATE CASCADE
+    KEY idx_metric_type (metric_type_id),
+    CONSTRAINT fk_metric_vendor FOREIGN KEY (vendor_id) REFERENCES vendor (vendor_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+    CONSTRAINT fk_metric_type FOREIGN KEY (metric_type_id) REFERENCES metric_type (metric_type_id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------------------------------
--- customs_document  (one-to-one with shipment: unique FK)
+-- customs_document
 -- -----------------------------------------------------------------------------
 DROP TABLE IF EXISTS customs_document;
 CREATE TABLE customs_document (
@@ -141,12 +150,11 @@ CREATE TABLE customs_document (
     version                BIGINT       NOT NULL DEFAULT 0,
     CONSTRAINT uq_customs_document_shipment UNIQUE (shipment_id),
     KEY idx_customs_deadline (submission_deadline),
-    CONSTRAINT fk_customs_document_shipment FOREIGN KEY (shipment_id) REFERENCES shipment (shipment_id)
-        ON DELETE RESTRICT ON UPDATE CASCADE
+    CONSTRAINT fk_customs_document_shipment FOREIGN KEY (shipment_id) REFERENCES shipment (shipment_id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------------------------------
--- audit_log_entry  (append-only; no UPDATE/DELETE path exists in application code)
+-- audit_log_entry
 -- -----------------------------------------------------------------------------
 DROP TABLE IF EXISTS audit_log_entry;
 CREATE TABLE audit_log_entry (
@@ -162,7 +170,7 @@ CREATE TABLE audit_log_entry (
 ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------------------------------
--- failed_operation  (dead-letter table for ExceptionRecoveryManager)
+-- failed_operation
 -- -----------------------------------------------------------------------------
 DROP TABLE IF EXISTS failed_operation;
 CREATE TABLE failed_operation (
@@ -178,17 +186,18 @@ CREATE TABLE failed_operation (
 ) ENGINE = InnoDB;
 
 -- -----------------------------------------------------------------------------
--- system_user  (backing store for SupplyChainLoginModule)
+-- system_user
 -- -----------------------------------------------------------------------------
 DROP TABLE IF EXISTS system_user;
 CREATE TABLE system_user (
     system_user_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username        VARCHAR(100) NOT NULL,
-    password_hash   VARCHAR(255) NOT NULL COMMENT 'iterations:base64(salt):base64(hash) -- see SecurityUtil',
+    password_hash   VARCHAR(255) NOT NULL,
     full_name       VARCHAR(150) NULL,
-    role            VARCHAR(32)  NOT NULL COMMENT 'must match a com.globaltrade.scm.common.enums.UserRole constant',
+    role_id         BIGINT UNSIGNED NOT NULL,
     active          BOOLEAN      NOT NULL DEFAULT TRUE,
-    CONSTRAINT uq_user_username UNIQUE (username)
+    CONSTRAINT uq_user_username UNIQUE (username),
+    CONSTRAINT fk_user_role FOREIGN KEY (role_id) REFERENCES user_role (role_id) ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE = InnoDB;
 
 SET FOREIGN_KEY_CHECKS = 1;
@@ -197,49 +206,46 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- Seed data
 -- =============================================================================
 
--- One demo account per role. Password hashes below were generated with the
--- ACTUAL com.globaltrade.scm.security.SecurityUtil.hashPassword algorithm
--- (PBKDF2WithHmacSHA256, 120,000 iterations) and verified round-trip against
--- SecurityUtil.verifyPassword before being embedded here, so these are real,
--- working credentials against a freshly-loaded database -- not placeholders.
--- Change every one of these before any deployment beyond a local/demo
--- environment.
---
---   username        password         role
---   --------        --------         ----
---   admin           Admin@12345      ADMIN
---   jcoordinator    Coord@12345      LOGISTICS_COORDINATOR
---   cagent          Customs@12345    CUSTOMS_AGENT
---   wmanager        Warehouse@12345  WAREHOUSE_MANAGER
---   vrep            Vendor@12345     VENDOR_REPRESENTATIVE
---   customer1       Customer@12345   CUSTOMER
-INSERT INTO system_user (username, password_hash, full_name, role, active) VALUES
-    ('admin', '120000:TVOfKy2TvlA+nEupu7hjfg==:muiBlGZ+VpuOSYF8b4ay3XjO1VIFqRKhHqhgRZB4JsY=', 'System Administrator', 'ADMIN', TRUE),
-    ('jcoordinator', '120000:GtB7J/Kle3V0qETX/+f4UQ==:IEpaqou6NEMOz92n5F2icoYT3YQqcDarC9gptDxrmh8=', 'Jordan Coordinator', 'LOGISTICS_COORDINATOR', TRUE),
-    ('cagent', '120000:GStlQvmrciXf4MdpeiAKpw==:nDqh2gVztLf9rJzw2ad1Hg4Zls72cEsXIcFKNBsX8oI=', 'Casey Agent', 'CUSTOMS_AGENT', TRUE),
-    ('wmanager', '120000:L7IiZAnc71nceASwe9PbOA==:cNRbwpGMYWnivBYe9r977tvIaVv2HSdzmJEJhHbPM8s=', 'Wren Manager', 'WAREHOUSE_MANAGER', TRUE),
-    ('vrep', '120000:zBnP2Wa/yBJRzw0XWfoagw==:dEKLkvV3hGuK+ccx1uyEyziXpVZahN7VyYRfvja3H4A=', 'Vendor Representative Demo', 'VENDOR_REPRESENTATIVE', TRUE),
-    ('customer1', '120000:igbn8Fj+s9nU+hMnfuoMlw==:WRqTrN9L/WN15Gu97fGo1Uz7HZrR9cWdFdWuSvVS3M8=', 'Demo Customer', 'CUSTOMER', TRUE);
+INSERT INTO country (country_id, code, name) VALUES 
+(1, 'CN', 'China'),
+(2, 'SE', 'Sweden'),
+(3, 'CL', 'Chile'),
+(4, 'US', 'United States'),
+(5, 'GB', 'United Kingdom'),
+(6, 'SG', 'Singapore');
 
-INSERT INTO vendor (name, country, contact_email, performance_score, active, created_at, version) VALUES
-    ('Pacific Rim Textiles Ltd.', 'CN', 'trade@pacificrimtextiles.example', 87.5, TRUE, NOW(6), 0),
-    ('Nordic Components AB', 'SE', 'sales@nordiccomponents.example', 94.2, TRUE, NOW(6), 0),
-    ('Andes Fresh Produce S.A.', 'CL', 'export@andesfresh.example', 78.0, TRUE, NOW(6), 0);
+INSERT INTO user_role (role_id, name) VALUES 
+(1, 'ADMIN'),
+(2, 'LOGISTICS_COORDINATOR'),
+(3, 'CUSTOMS_AGENT'),
+(4, 'WAREHOUSE_MANAGER'),
+(5, 'VENDOR_REPRESENTATIVE'),
+(6, 'CUSTOMER');
 
-INSERT INTO carrier (name, code, api_endpoint, region, active) VALUES
-    ('Global Ocean Freight', 'GOF', 'https://api.globaloceanfreight.example/v1', 'GLOBAL', TRUE),
-    ('TransAtlantic Air Cargo', 'TAAC', 'https://api.transatlanticaircargo.example/v2', 'ATLANTIC', TRUE),
-    ('PacBridge Logistics', 'PBL', 'https://api.pacbridge.example/v1', 'PACIFIC', TRUE);
+INSERT INTO metric_type (metric_type_id, name) VALUES 
+(1, 'ON_TIME_DELIVERY_RATE'),
+(2, 'DEFECT_RATE'),
+(3, 'MANUAL_REVIEW_SCORE');
 
-INSERT INTO inventory_item (sku, description, quantity_on_hand, reorder_threshold, warehouse_location, last_restocked_at, version) VALUES
-    ('SKU-TEX-1001', 'Cotton fabric roll, 100m', 420, 150, 'WH-EU-01', NOW(6), 0),
-    ('SKU-ELE-2002', 'Precision bearing assembly, 50-unit case', 60, 75, 'WH-EU-01', NOW(6), 0),
-    ('SKU-AGR-3003', 'Frozen berry mix, 20kg case', 900, 200, 'WH-SA-02', NOW(6), 0);
+INSERT INTO system_user (username, password_hash, full_name, role_id, active) VALUES
+    ('admin', '120000:TVOfKy2TvlA+nEupu7hjfg==:muiBlGZ+VpuOSYF8b4ay3XjO1VIFqRKhHqhgRZB4JsY=', 'System Administrator', 1, TRUE),
+    ('jcoordinator', '120000:GtB7J/Kle3V0qETX/+f4UQ==:IEpaqou6NEMOz92n5F2icoYT3YQqcDarC9gptDxrmh8=', 'Jordan Coordinator', 2, TRUE),
+    ('cagent', '120000:GStlQvmrciXf4MdpeiAKpw==:nDqh2gVztLf9rJzw2ad1Hg4Zls72cEsXIcFKNBsX8oI=', 'Casey Agent', 3, TRUE),
+    ('wmanager', '120000:L7IiZAnc71nceASwe9PbOA==:cNRbwpGMYWnivBYe9r977tvIaVv2HSdzmJEJhHbPM8s=', 'Wren Manager', 4, TRUE),
+    ('vrep', '120000:zBnP2Wa/yBJRzw0XWfoagw==:dEKLkvV3hGuK+ccx1uyEyziXpVZahN7VyYRfvja3H4A=', 'Vendor Representative Demo', 5, TRUE),
+    ('customer1', '120000:igbn8Fj+s9nU+hMnfuoMlw==:WRqTrN9L/WN15Gu97fGo1Uz7HZrR9cWdFdWuSvVS3M8=', 'Demo Customer', 6, TRUE);
 
--- Seed data intentionally does not include shipment/customs_document rows:
--- both are more meaningfully created through the application (registerShipment
--- / OrderProcessingServiceBean) so that their timer-scheduling side effects
--- (ShipmentStatusUpdateTimerBean's poll, CustomsDeadlineTimerBean's
--- programmatic per-document timer) are exercised the same way they would be
--- in production, rather than starting from rows the timers never "saw"
--- created.
+INSERT INTO vendor (vendor_id, name, country_id, contact_email, performance_score, active, created_at, version) VALUES
+    (1, 'Pacific Rim Textiles Ltd.', 1, 'trade@pacificrimtextiles.example', 87.5, TRUE, NOW(6), 0),
+    (2, 'Nordic Components AB', 2, 'sales@nordiccomponents.example', 94.2, TRUE, NOW(6), 0),
+    (3, 'Andes Fresh Produce S.A.', 3, 'export@andesfresh.example', 78.0, TRUE, NOW(6), 0);
+
+INSERT INTO carrier (carrier_id, name, code, api_endpoint, region, active) VALUES
+    (1, 'Global Ocean Freight', 'GOF', 'https://api.globaloceanfreight.example/v1', 'GLOBAL', TRUE),
+    (2, 'TransAtlantic Air Cargo', 'TAAC', 'https://api.transatlanticaircargo.example/v2', 'ATLANTIC', TRUE),
+    (3, 'PacBridge Logistics', 'PBL', 'https://api.pacbridge.example/v1', 'PACIFIC', TRUE);
+
+INSERT INTO inventory_item (inventory_item_id, sku, description, quantity_on_hand, reorder_threshold, warehouse_location, last_restocked_at, version) VALUES
+    (1, 'SKU-TEX-1001', 'Cotton fabric roll, 100m', 420, 150, 'WH-EU-01', NOW(6), 0),
+    (2, 'SKU-ELE-2002', 'Precision bearing assembly, 50-unit case', 60, 75, 'WH-EU-01', NOW(6), 0),
+    (3, 'SKU-AGR-3003', 'Frozen berry mix, 20kg case', 900, 200, 'WH-SA-02', NOW(6), 0);

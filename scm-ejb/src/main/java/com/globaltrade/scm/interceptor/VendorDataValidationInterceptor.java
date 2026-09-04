@@ -43,9 +43,10 @@ public class VendorDataValidationInterceptor {
         if (vendor.getName() == null || vendor.getName().isBlank()) {
             throw new VendorDataValidationException("Vendor name must not be blank");
         }
-        if (vendor.getCountry() == null || vendor.getCountry().length() != 2) {
+        if (vendor.getCountry() == null || vendor.getCountry().getCode() == null || vendor.getCountry().getCode().length() != 2) {
             throw new VendorDataValidationException(
-                    "Vendor country must be a 2-letter ISO code, got: " + vendor.getCountry());
+                    "Vendor country must be a 2-letter ISO code, got: " + 
+                    (vendor.getCountry() != null ? vendor.getCountry().getCode() : "null"));
         }
         if (vendor.getPerformanceScore() != null
                 && (vendor.getPerformanceScore() < 0.0 || vendor.getPerformanceScore() > 100.0)) {

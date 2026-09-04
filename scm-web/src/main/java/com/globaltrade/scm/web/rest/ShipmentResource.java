@@ -9,6 +9,7 @@ import jakarta.ejb.EJB;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -82,6 +83,15 @@ public class ShipmentResource {
         return Response.noContent().build();
     }
 
+    @PUT
+    @Path("/{trackingNumber}/status")
+    public Response updateStatus(@PathParam("trackingNumber") String trackingNumber, StatusUpdateRequest request)
+            throws ShipmentTrackingException {
+        shipmentTrackingService.recordCarrierStatusUpdate(
+                trackingNumber, request.status(), request.actualDelivery());
+        return Response.noContent().build();
+    }
+
     @DELETE
     @Path("/{trackingNumber}")
     public Response cancel(@PathParam("trackingNumber") String trackingNumber,
@@ -94,8 +104,8 @@ public class ShipmentResource {
         return new ShipmentTrackingResult(
                 shipment.getTrackingNumber(),
                 shipment.getStatus(),
-                shipment.getOriginCountry(),
-                shipment.getDestinationCountry(),
+                shipment.getOriginCountry().getCode(),
+                shipment.getDestinationCountry().getCode(),
                 shipment.getEstimatedDelivery(),
                 shipment.getActualDelivery(),
                 shipment.getCarrier() != null ? shipment.getCarrier().getName() : null,
@@ -109,5 +119,8 @@ public class ShipmentResource {
 
     public record CarrierStatusWebhookRequest(
             String trackingNumber, ShipmentStatus status, LocalDateTime actualDelivery) {
+    }
+
+    public record StatusUpdateRequest(ShipmentStatus status, LocalDateTime actualDelivery) {
     }
 }

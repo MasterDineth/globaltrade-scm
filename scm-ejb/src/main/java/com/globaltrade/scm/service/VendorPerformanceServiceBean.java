@@ -2,7 +2,9 @@ package com.globaltrade.scm.service;
 
 import com.globaltrade.scm.common.dto.VendorPerformanceSummary;
 import com.globaltrade.scm.entity.PerformanceMetric;
+import com.globaltrade.scm.entity.MetricTypeEntity;
 import com.globaltrade.scm.entity.Vendor;
+import com.globaltrade.scm.entity.Country;
 import com.globaltrade.scm.exception.VendorDataValidationException;
 import com.globaltrade.scm.interceptor.VendorDataValidationInterceptor;
 import com.globaltrade.scm.service.local.VendorPerformanceServiceLocal;
@@ -51,6 +53,10 @@ public class VendorPerformanceServiceBean implements VendorPerformanceServiceLoc
         // VendorDataValidationInterceptor has already validated `vendor`
         // (it matches parameters of type Vendor) before this method body
         // runs, so no redundant field-level checks are needed here.
+        Country c = em.createQuery("SELECT c FROM Country c WHERE c.code = :code", Country.class)
+                .setParameter("code", vendor.getCountry().getCode())
+                .getSingleResult();
+        vendor.setCountry(c);
         em.persist(vendor);
         return vendor;
     }
@@ -74,9 +80,11 @@ public class VendorPerformanceServiceBean implements VendorPerformanceServiceLoc
         if (score < 0 || score > 100) {
             throw new VendorDataValidationException("Review score out of range [0,100]: " + score);
         }
+        MetricTypeEntity mt = em.createQuery("SELECT m FROM MetricTypeEntity m WHERE m.name = 'MANUAL_REVIEW_SCORE'", MetricTypeEntity.class)
+                .getSingleResult();
         PerformanceMetric metric = new PerformanceMetric();
         metric.setVendor(vendor);
-        metric.setMetricType("MANUAL_REVIEW_SCORE");
+        metric.setMetricType(mt);
         metric.setValue(score);
         metric.setRecordedAt(LocalDateTime.now());
         em.persist(metric);
@@ -99,7 +107,56 @@ public class VendorPerformanceServiceBean implements VendorPerformanceServiceLoc
     @RolesAllowed({"ADMIN", "LOGISTICS_COORDINATOR", "VENDOR_REPRESENTATIVE"})
     public Future<VendorPerformanceSummary> assessVendorAsync(Long vendorId) throws VendorDataValidationException {
         Vendor vendor = requireVendor(vendorId);
-        return new AsyncResult<>(buildSummary(vendor));
+
+        // 1. Calculate On-Time Delivery Rate
+        Long onTimeCount = em.createQuery(
+                "SELECT COUNT(s) FROM Shipment s WHERE s.vendor = :vendor "
+                        + "AND s.actualDelivery IS NOT NULL AND s.estimatedDelivery IS NOT NULL "
+                        + "AND s.actualDelivery <= s.estimatedDelivery", Long.class)
+                .setParameter("vendor", vendor)
+                .getSingleResult();
+                
+        Long totalCount = em.createQuery(
+                "SELECT COUNT(s) FROM Shipment s WHERE s.vendor = :vendor AND s.actualDelivery IS NOT NULL", Long.class)
+                .setParameter("vendor", vendor)
+                .getSingleResult();
+
+        double onTimeRate = (totalCount == null || totalCount == 0)
+                ? 0.0
+                : (onTimeCount == null ? 0.0 : onTimeCount) * 100.0 / totalCount;
+
+        // Record the On-Time metric
+        MetricTypeEntity mt = em.createQuery("SELECT m FROM MetricTypeEntity m WHERE m.name = 'ON_TIME_DELIVERY_RATE'", MetricTypeEntity.class)
+                .getSingleResult();
+        PerformanceMetric metric = new PerformanceMetric();
+        metric.setVendor(vendor);
+        metric.setMetricType(mt);
+        metric.setValue(onTimeRate);
+        metric.setRecordedAt(LocalDateTime.now());
+        em.persist(metric);
+
+        // 2. Calculate Manual Review Average
+        Double manualAvg = em.createQuery(
+                "SELECT AVG(m.value) FROM PerformanceMetric m WHERE m.vendor = :vendor AND m.metricType.name = 'MANUAL_REVIEW_SCORE'",
+                Double.class)
+                .setParameter("vendor", vendor)
+                .getSingleResult();
+
+        // 3. Compute Overall Score
+        double overallScore = 0.0;
+        if (manualAvg != null && totalCount != null && totalCount > 0) {
+            overallScore = (onTimeRate + manualAvg) / 2.0;
+        } else if (manualAvg != null) {
+            overallScore = manualAvg;
+        } else if (totalCount != null && totalCount > 0) {
+            overallScore = onTimeRate;
+        }
+        
+        vendor.setPerformanceScore(overallScore);
+        em.merge(vendor);
+
+        return new AsyncResult<>(new VendorPerformanceSummary(
+                vendor.getId(), vendor.getName(), onTimeRate, overallScore, totalCount == null ? 0 : totalCount, LocalDateTime.now()));
     }
 
     private Vendor requireVendor(Long vendorId) throws VendorDataValidationException {
@@ -113,7 +170,7 @@ public class VendorPerformanceServiceBean implements VendorPerformanceServiceLoc
     private VendorPerformanceSummary buildSummary(Vendor vendor) {
         TypedQuery<PerformanceMetric> metricsQuery = em.createQuery(
                 "SELECT m FROM PerformanceMetric m WHERE m.vendor = :vendor "
-                        + "AND m.metricType = 'ON_TIME_DELIVERY_RATE' ORDER BY m.recordedAt DESC",
+                        + "AND m.metricType.name = 'ON_TIME_DELIVERY_RATE' ORDER BY m.recordedAt DESC",
                 PerformanceMetric.class);
         metricsQuery.setParameter("vendor", vendor);
         metricsQuery.setMaxResults(1);

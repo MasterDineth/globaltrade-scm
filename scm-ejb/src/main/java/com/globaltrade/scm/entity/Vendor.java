@@ -22,8 +22,9 @@ public class Vendor implements Serializable {
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 
-    @Column(name = "country", nullable = false, length = 2)
-    private String country;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "country_id")
+    private Country country;
 
     @Column(name = "contact_email", length = 150)
     private String contactEmail;
@@ -62,11 +63,11 @@ public class Vendor implements Serializable {
         this.name = name;
     }
 
-    public String getCountry() {
+    public Country getCountry() {
         return country;
     }
 
-    public void setCountry(String country) {
+    public void setCountry(Country country) {
         this.country = country;
     }
 

@@ -32,11 +32,13 @@ public class Shipment implements Serializable {
     @Column(name = "tracking_number", nullable = false, unique = true, length = 64)
     private String trackingNumber;
 
-    @Column(name = "origin_country", nullable = false, length = 2)
-    private String originCountry;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "origin_country_id")
+    private Country originCountry;
 
-    @Column(name = "destination_country", nullable = false, length = 2)
-    private String destinationCountry;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "destination_country_id")
+    private Country destinationCountry;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)
@@ -100,19 +102,19 @@ public class Shipment implements Serializable {
         this.trackingNumber = trackingNumber;
     }
 
-    public String getOriginCountry() {
+    public Country getOriginCountry() {
         return originCountry;
     }
 
-    public void setOriginCountry(String originCountry) {
+    public void setOriginCountry(Country originCountry) {
         this.originCountry = originCountry;
     }
 
-    public String getDestinationCountry() {
+    public Country getDestinationCountry() {
         return destinationCountry;
     }
 
-    public void setDestinationCountry(String destinationCountry) {
+    public void setDestinationCountry(Country destinationCountry) {
         this.destinationCountry = destinationCountry;
     }
 

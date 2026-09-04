@@ -22,7 +22,7 @@ public class SupplyChainIdentityStore implements IdentityStore {
 
     private static final String DATA_SOURCE_JNDI_NAME = "jdbc/SCMDataSource";
     private static final String AUTH_QUERY =
-            "SELECT password_hash, role, active FROM system_user WHERE username = ?";
+            "SELECT u.password_hash, r.name AS role, u.active FROM system_user u JOIN user_role r ON u.role_id = r.role_id WHERE u.username = ?";
 
     @Override
     public CredentialValidationResult validate(Credential credential) {

@@ -13,12 +13,15 @@ com\globaltrade\scm\security\SecurityUtil.class
 com\globaltrade\scm\entity\InventoryItem.class
 com\globaltrade\scm\entity\CustomsDocument.class
 com\globaltrade\scm\service\local\InventoryManagementServiceLocal.class
+com\globaltrade\scm\entity\MetricTypeEntity.class
 com\globaltrade\scm\entity\Vendor.class
 com\globaltrade\scm\service\InventoryManagementServiceBean.class
 com\globaltrade\scm\exception\CarrierSystemUnavailableException.class
 com\globaltrade\scm\service\CustomsDocumentationServiceBean.class
 com\globaltrade\scm\timer\RouteOptimizationTimerBean.class
 com\globaltrade\scm\interceptor\PerformanceMonitoringInterceptor.class
+com\globaltrade\scm\entity\Country.class
+com\globaltrade\scm\entity\UserRoleEntity.class
 com\globaltrade\scm\service\ShipmentTrackingServiceBean.class
 com\globaltrade\scm\entity\Shipment.class
 com\globaltrade\scm\exception\ShipmentTrackingException.class

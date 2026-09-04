@@ -157,11 +157,11 @@ async function apiCall(endpoint, method = 'GET', body = null) {
         throw new Error(`API Error: ${res.status}`);
     }
     
-    // Some POST endpoints return 204 No Content
-    if (res.status === 204 || res.headers.get('content-length') === '0') {
+    const text = await res.text();
+    if (!text || text.trim() === '') {
         return null;
     }
-    return await res.json();
+    return JSON.parse(text);
 }
 
 // --- Overview ---
@@ -206,7 +206,7 @@ document.getElementById('btn-create-shipment').addEventListener('click', () => {
             { id: 'origin', label: 'Origin Country Code (e.g. CN)', type: 'text', required: true },
             { id: 'dest', label: 'Destination Country Code (e.g. SE)', type: 'text', required: true },
             { id: 'weight', label: 'Weight (kg)', type: 'number', required: true },
-            { id: 'estDate', label: 'Est. Delivery (YYYY-MM-DDTHH:MM:SS)', type: 'text', required: true }
+            { id: 'estDate', label: 'Est. Delivery', type: 'datetime-local', step: '1', required: true }
         ],
         async (inputs) => {
             await apiCall('/shipments', 'POST', {
@@ -263,7 +263,7 @@ window.cancelShipment = (trackingNumber) => {
 window.updateShipmentStatus = (trackingNumber) => {
     openModal('Update Status', `Set new status for shipment ${trackingNumber}:`, [
         { id: 'status', label: 'Status (e.g. IN_TRANSIT, DELIVERED)', type: 'text', required: true },
-        { id: 'actualDelivery', label: 'Actual Delivery (optional, YYYY-MM-DDTHH:MM:SS)', type: 'text', required: false }
+        { id: 'actualDelivery', label: 'Actual Delivery (optional)', type: 'datetime-local', step: '1', required: false }
     ], async (inputs) => {
         await apiCall(`/shipments/${trackingNumber}/status`, 'PUT', {
             status: inputs.status,
@@ -506,7 +506,7 @@ function openModal(title, desc, inputsConfig, onSubmitCallback) {
         div.className = 'input-group';
         div.innerHTML = `
             <label for="${cfg.id}">${cfg.label}</label>
-            <input type="${cfg.type}" id="${cfg.id}" required="${cfg.required}">
+            <input type="${cfg.type}" id="${cfg.id}" required="${cfg.required}" ${cfg.step ? `step="${cfg.step}"` : ''}>
         `;
         modalInputs.appendChild(div);
     });
@@ -539,10 +539,12 @@ function openModal(title, desc, inputsConfig, onSubmitCallback) {
     modalForm.onsubmit = currentModalAction;
     
     actionModal.classList.remove('hidden');
+    actionModal.classList.add('active');
 }
 
 function closeModal() {
     actionModal.classList.add('hidden');
+    actionModal.classList.remove('active');
     currentModalAction = null;
 }
 

@@ -7,9 +7,11 @@ com\globaltrade\scm\web\rest\CustomsResource$RejectionRequest.class
 com\globaltrade\scm\web\rest\CustomsResource$ApprovalRequest.class
 com\globaltrade\scm\web\rest\OrderResource$PlaceOrderRequest.class
 com\globaltrade\scm\web\rest\ShipmentResource$ShipmentRegistrationRequest.class
+com\globaltrade\scm\web\rest\VendorResource$RegistrationRequest.class
 com\globaltrade\scm\web\rest\InventoryResource$ReplenishRequest.class
 com\globaltrade\scm\web\rest\VendorResource$UpdateProfileRequest.class
 com\globaltrade\scm\web\rest\ShipmentResource$CarrierStatusWebhookRequest.class
+com\globaltrade\scm\web\rest\ShipmentResource$StatusUpdateRequest.class
 com\globaltrade\scm\web\rest\OrderResource.class
 com\globaltrade\scm\web\rest\SupplyChainExceptionMapper.class
 com\globaltrade\scm\web\security\SupplyChainIdentityStore.class

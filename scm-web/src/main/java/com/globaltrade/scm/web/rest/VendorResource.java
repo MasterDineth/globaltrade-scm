@@ -1,6 +1,8 @@
 package com.globaltrade.scm.web.rest;
 
 import com.globaltrade.scm.common.dto.VendorPerformanceSummary;
+import com.globaltrade.scm.entity.Country;
+import com.globaltrade.scm.entity.Vendor;
 import com.globaltrade.scm.exception.VendorDataValidationException;
 import com.globaltrade.scm.service.local.VendorPerformanceServiceLocal;
 import jakarta.ejb.EJB;
@@ -46,6 +48,19 @@ public class VendorResource {
     }
 
     @POST
+    public Response registerVendor(RegistrationRequest request) throws VendorDataValidationException {
+        Vendor vendor = new Vendor();
+        vendor.setName(request.name());
+        vendor.setContactEmail(request.contactEmail());
+        Country c = new Country();
+        c.setCode(request.countryCode());
+        vendor.setCountry(c);
+
+        vendorPerformanceService.registerVendor(vendor);
+        return Response.status(Response.Status.CREATED).build();
+    }
+
+    @POST
     @Path("/{vendorId}/reviews")
     public Response submitReview(@PathParam("vendorId") Long vendorId, ReviewRequest request)
             throws VendorDataValidationException {
@@ -87,6 +102,9 @@ public class VendorResource {
     }
 
     public record UpdateProfileRequest(String contactEmail) {
+    }
+
+    public record RegistrationRequest(String name, String countryCode, String contactEmail) {
     }
 
     public record ReviewRequest(int score, String notes) {

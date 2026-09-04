@@ -23,8 +23,9 @@ public class PerformanceMetric implements Serializable {
     @JoinColumn(name = "vendor_id", nullable = false)
     private Vendor vendor;
 
-    @Column(name = "metric_type", nullable = false, length = 64)
-    private String metricType;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "metric_type_id")
+    private MetricTypeEntity metricType;
 
     @Column(name = "value", nullable = false)
     private double value;
@@ -48,11 +49,11 @@ public class PerformanceMetric implements Serializable {
         this.vendor = vendor;
     }
 
-    public String getMetricType() {
+    public MetricTypeEntity getMetricType() {
         return metricType;
     }
 
-    public void setMetricType(String metricType) {
+    public void setMetricType(MetricTypeEntity metricType) {
         this.metricType = metricType;
     }
 

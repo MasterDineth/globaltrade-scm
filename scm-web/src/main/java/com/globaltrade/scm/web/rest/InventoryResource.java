@@ -7,6 +7,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
@@ -51,6 +52,23 @@ public class InventoryResource {
     @Path("/low-stock")
     public List<InventoryItem> lowStock() {
         return inventoryManagementService.findBelowReorderThreshold();
+    }
+
+    @GET
+    @Path("/all")
+    public List<InventoryItem> allStock() {
+        return inventoryManagementService.findAll();
+    }
+
+    @POST
+    public InventoryItem create(InventoryItem item) {
+        return inventoryManagementService.createItem(item);
+    }
+
+    @PUT
+    @Path("/{sku}")
+    public InventoryItem update(@PathParam("sku") String sku, InventoryItem item) {
+        return inventoryManagementService.updateItem(sku, item);
     }
 
     @POST

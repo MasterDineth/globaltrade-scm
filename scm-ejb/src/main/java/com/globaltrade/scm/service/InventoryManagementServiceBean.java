@@ -99,6 +99,38 @@ public class InventoryManagementServiceBean implements InventoryManagementServic
         return query.getResultList();
     }
 
+    @Override
+    @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
+    @RolesAllowed({"ADMIN", "LOGISTICS_COORDINATOR", "WAREHOUSE_MANAGER"})
+    public List<InventoryItem> findAll() {
+        return em.createQuery("SELECT i FROM InventoryItem i", InventoryItem.class).getResultList();
+    }
+
+    @Override
+    @RolesAllowed({"ADMIN", "WAREHOUSE_MANAGER"})
+    public InventoryItem createItem(InventoryItem item) {
+        if (findBySkuOrNull(item.getSku()) != null) {
+            throw new IllegalArgumentException("SKU already exists: " + item.getSku());
+        }
+        em.persist(item);
+        return item;
+    }
+
+    @Override
+    @RolesAllowed({"ADMIN", "WAREHOUSE_MANAGER"})
+    public InventoryItem updateItem(String sku, InventoryItem item) {
+        InventoryItem existing = findBySkuOrNull(sku);
+        if (existing == null) {
+            throw new IllegalArgumentException("Unknown SKU: " + sku);
+        }
+        existing.setDescription(item.getDescription());
+        existing.setQuantityOnHand(item.getQuantityOnHand());
+        existing.setReorderThreshold(item.getReorderThreshold());
+        existing.setWarehouseLocation(item.getWarehouseLocation());
+        em.merge(existing);
+        return existing;
+    }
+
     private InventoryItem findBySkuOrNull(String sku) {
         try {
             TypedQuery<InventoryItem> query = em.createQuery(

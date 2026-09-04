@@ -163,8 +163,11 @@
             <section id="section-inventory" class="content-section hidden">
                 <div class="glass-panel data-panel">
                     <div class="panel-header">
-                        <h2>Low Stock Alerts</h2>
-                        <button class="btn-secondary btn-sm" id="refresh-inventory">Refresh</button>
+                        <h2>Inventory Management</h2>
+                        <div class="actions">
+                            <button class="btn-primary btn-sm" id="btn-create-inventory">Add Inventory</button>
+                            <button class="btn-secondary btn-sm" id="refresh-inventory">Refresh</button>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="data-table">
@@ -193,7 +196,9 @@
                         <h2>Vendor Management</h2>
                         <div class="actions">
                             <input type="text" id="vendor-input" placeholder="Vendor ID (e.g. 1)" style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(15,23,42,0.5); color: white;">
-                            <button class="btn-secondary btn-sm" id="btn-assess-vendor">Assess Performance</button>
+                            <button class="btn-secondary btn-sm" id="btn-assess-vendor">Assess</button>
+                            <button class="btn-primary btn-sm" id="btn-create-vendor">Register Vendor</button>
+                            <button class="btn-secondary btn-sm" id="btn-add-metric">Add Metric</button>
                         </div>
                     </div>
                     <div id="vendor-result" style="margin-top: 1rem;">

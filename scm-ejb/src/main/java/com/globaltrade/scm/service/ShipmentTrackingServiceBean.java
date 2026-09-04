@@ -3,6 +3,7 @@ package com.globaltrade.scm.service;
 import com.globaltrade.scm.common.dto.ShipmentTrackingResult;
 import com.globaltrade.scm.common.enums.ShipmentStatus;
 import com.globaltrade.scm.entity.Carrier;
+import com.globaltrade.scm.entity.Country;
 import com.globaltrade.scm.entity.Shipment;
 import com.globaltrade.scm.entity.Vendor;
 import com.globaltrade.scm.exception.ShipmentTrackingException;
@@ -78,12 +79,17 @@ public class ShipmentTrackingServiceBean implements ShipmentTrackingServiceLocal
             }
         }
 
+        Country origin = em.createQuery("SELECT c FROM Country c WHERE c.code = :code", Country.class)
+                .setParameter("code", originCountry).getSingleResult();
+        Country dest = em.createQuery("SELECT c FROM Country c WHERE c.code = :code", Country.class)
+                .setParameter("code", destinationCountry).getSingleResult();
+
         Shipment shipment = new Shipment();
         shipment.setTrackingNumber(trackingNumber);
         shipment.setVendor(vendor);
         shipment.setCarrier(carrier);
-        shipment.setOriginCountry(originCountry);
-        shipment.setDestinationCountry(destinationCountry);
+        shipment.setOriginCountry(origin);
+        shipment.setDestinationCountry(dest);
         shipment.setWeightKg(weightKg);
         shipment.setEstimatedDelivery(estimatedDelivery);
         shipment.setStatus(ShipmentStatus.CREATED);
@@ -201,8 +207,8 @@ public class ShipmentTrackingServiceBean implements ShipmentTrackingServiceLocal
         return new ShipmentTrackingResult(
                 shipment.getTrackingNumber(),
                 shipment.getStatus(),
-                shipment.getOriginCountry(),
-                shipment.getDestinationCountry(),
+                shipment.getOriginCountry().getCode(),
+                shipment.getDestinationCountry().getCode(),
                 shipment.getEstimatedDelivery(),
                 shipment.getActualDelivery(),
                 shipment.getCarrier() != null ? shipment.getCarrier().getName() : null,

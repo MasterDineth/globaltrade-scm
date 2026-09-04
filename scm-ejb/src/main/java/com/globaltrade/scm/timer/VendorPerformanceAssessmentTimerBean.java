@@ -1,6 +1,7 @@
 package com.globaltrade.scm.timer;
 
 import com.globaltrade.scm.entity.PerformanceMetric;
+import com.globaltrade.scm.entity.MetricTypeEntity;
 import com.globaltrade.scm.entity.Vendor;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
@@ -113,9 +114,12 @@ public class VendorPerformanceAssessmentTimerBean {
 
         vendor.setPerformanceScore(rate);
 
+        MetricTypeEntity mt = em.createQuery("SELECT m FROM MetricTypeEntity m WHERE m.name = 'ON_TIME_DELIVERY_RATE'", MetricTypeEntity.class)
+                .getSingleResult();
+
         PerformanceMetric metric = new PerformanceMetric();
         metric.setVendor(vendor);
-        metric.setMetricType("ON_TIME_DELIVERY_RATE");
+        metric.setMetricType(mt);
         metric.setValue(rate);
         metric.setRecordedAt(LocalDateTime.now());
         em.persist(metric);

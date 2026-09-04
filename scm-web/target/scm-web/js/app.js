@@ -241,7 +241,10 @@ async function loadShipments() {
                 <td>${s.originCountry}</td>
                 <td>${s.destinationCountry}</td>
                 <td>${s.estimatedDelivery || 'N/A'}</td>
-                <td><button class="btn-text" style="color: var(--danger)" onclick="cancelShipment('${s.trackingNumber}')">Cancel</button></td>
+                <td>
+                    <button class="btn-secondary btn-sm" onclick="updateShipmentStatus('${s.trackingNumber}')">Status</button>
+                    <button class="btn-text" style="color: var(--danger)" onclick="cancelShipment('${s.trackingNumber}')">Cancel</button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
@@ -257,6 +260,19 @@ window.cancelShipment = (trackingNumber) => {
     });
 };
 
+window.updateShipmentStatus = (trackingNumber) => {
+    openModal('Update Status', `Set new status for shipment ${trackingNumber}:`, [
+        { id: 'status', label: 'Status (e.g. IN_TRANSIT, DELIVERED)', type: 'text', required: true },
+        { id: 'actualDelivery', label: 'Actual Delivery (optional, YYYY-MM-DDTHH:MM:SS)', type: 'text', required: false }
+    ], async (inputs) => {
+        await apiCall(`/shipments/${trackingNumber}/status`, 'PUT', {
+            status: inputs.status,
+            actualDelivery: inputs.actualDelivery || null
+        });
+        loadShipments();
+    });
+};
+
 // --- Inventory ---
 document.getElementById('refresh-inventory').addEventListener('click', loadInventory);
 
@@ -264,10 +280,10 @@ async function loadInventory() {
     const tbody = document.getElementById('inventory-body');
     tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
     try {
-        const data = await apiCall('/inventory/low-stock');
+        const data = await apiCall('/inventory/all');
         tbody.innerHTML = '';
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Inventory levels healthy</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No inventory found</td></tr>';
             return;
         }
         data.forEach(item => {
@@ -280,7 +296,10 @@ async function loadInventory() {
                 <td style="color: ${statusColor}; font-weight: bold;">${item.quantityOnHand}</td>
                 <td>${item.reorderThreshold}</td>
                 <td><span class="badge" style="background: ${statusColor}">${status}</span></td>
-                <td><button class="btn-secondary btn-sm" onclick="replenishStock('${item.sku}')">Replenish</button></td>
+                <td>
+                    <button class="btn-secondary btn-sm" onclick="replenishStock('${item.sku}')">Replenish</button>
+                    <button class="btn-secondary btn-sm" onclick="updateStock('${item.sku}', '${item.description}', ${item.quantityOnHand}, ${item.reorderThreshold}, '${item.warehouseLocation || ''}')">Edit</button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
@@ -307,6 +326,59 @@ window.replenishStock = (sku) => {
     );
 };
 
+window.updateStock = (sku, desc, qty, threshold, location) => {
+    openModal(
+        'Update Inventory',
+        `Update details for SKU ${sku}:`,
+        [
+            { id: 'desc', label: 'Description', type: 'text', required: true },
+            { id: 'qty', label: 'Quantity On Hand', type: 'number', required: true },
+            { id: 'threshold', label: 'Reorder Threshold', type: 'number', required: true },
+            { id: 'location', label: 'Warehouse Location', type: 'text', required: true }
+        ],
+        async (inputs) => {
+            // we will prepopulate using a small timeout hack since the modal inputs are newly created
+            await apiCall(`/inventory/${sku}`, 'PUT', {
+                description: inputs.desc,
+                quantityOnHand: parseInt(inputs.qty),
+                reorderThreshold: parseInt(inputs.threshold),
+                warehouseLocation: inputs.location
+            });
+            loadInventory();
+        }
+    );
+    setTimeout(() => {
+        document.getElementById('desc').value = desc;
+        document.getElementById('qty').value = qty;
+        document.getElementById('threshold').value = threshold;
+        document.getElementById('location').value = location;
+    }, 50);
+};
+
+document.getElementById('btn-create-inventory').addEventListener('click', () => {
+    openModal(
+        'Add Inventory',
+        'Enter details to register a new SKU:',
+        [
+            { id: 'sku', label: 'SKU', type: 'text', required: true },
+            { id: 'desc', label: 'Description', type: 'text', required: true },
+            { id: 'qty', label: 'Initial Quantity', type: 'number', required: true },
+            { id: 'threshold', label: 'Reorder Threshold', type: 'number', required: true },
+            { id: 'location', label: 'Warehouse Location', type: 'text', required: true }
+        ],
+        async (inputs) => {
+            await apiCall('/inventory', 'POST', {
+                sku: inputs.sku,
+                description: inputs.desc,
+                quantityOnHand: parseInt(inputs.qty),
+                reorderThreshold: parseInt(inputs.threshold),
+                warehouseLocation: inputs.location
+            });
+            loadInventory();
+        }
+    );
+});
+
 // --- Vendors ---
 document.getElementById('btn-assess-vendor').addEventListener('click', async () => {
     const vendorId = document.getElementById('vendor-input').value;
@@ -322,12 +394,55 @@ document.getElementById('btn-assess-vendor').addEventListener('click', async () 
                 <p>Vendor Name: ${data.vendorName || 'Unknown'}</p>
                 <p>Overall Score: <strong>${data.overallScore}</strong></p>
                 <p>On-Time Delivery Rate: ${(data.onTimeDeliveryRate * 100).toFixed(1)}%</p>
-                <p>Defect Rate: ${(data.defectRate * 100).toFixed(1)}%</p>
+                <p>Shipments Evaluated: ${data.shipmentsEvaluated}</p>
             </div>
         `;
     } catch (e) {
         resultDiv.innerHTML = `<p style="color: var(--danger)">${e.message}</p>`;
     }
+});
+
+document.getElementById('btn-create-vendor').addEventListener('click', () => {
+    openModal(
+        'Register Vendor',
+        'Enter vendor details:',
+        [
+            { id: 'name', label: 'Name', type: 'text', required: true },
+            { id: 'country', label: 'Country Code (e.g. US)', type: 'text', required: true },
+            { id: 'email', label: 'Contact Email', type: 'email', required: true }
+        ],
+        async (inputs) => {
+            await apiCall('/vendors', 'POST', {
+                name: inputs.name,
+                countryCode: inputs.country,
+                contactEmail: inputs.email
+            });
+            alert('Vendor registered successfully!');
+        }
+    );
+});
+
+document.getElementById('btn-add-metric').addEventListener('click', () => {
+    const vendorId = document.getElementById('vendor-input').value;
+    if (!vendorId) {
+        alert("Please enter a Vendor ID in the input box first.");
+        return;
+    }
+    openModal(
+        'Add Performance Metric',
+        `Submit a manual review score for Vendor ID ${vendorId}:`,
+        [
+            { id: 'score', label: 'Score (0-100)', type: 'number', required: true },
+            { id: 'notes', label: 'Notes', type: 'text', required: true }
+        ],
+        async (inputs) => {
+            await apiCall(`/vendors/${vendorId}/reviews`, 'POST', {
+                score: parseInt(inputs.score),
+                notes: inputs.notes
+            });
+            alert('Metric added successfully! Run Assessment to see changes.');
+        }
+    );
 });
 
 // --- Customs ---

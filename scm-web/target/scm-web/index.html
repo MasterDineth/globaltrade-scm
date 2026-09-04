@@ -33,6 +33,34 @@
         </div>
     </div>
 
+    <!-- Logout Message Overlay -->
+    <div id="logout-overlay" class="overlay hidden">
+        <div class="glass-panel login-box">
+            <h2>Successfully Logged Out</h2>
+            <p style="color: var(--success); margin: 2rem 0;">
+                For security reasons, your browser temporarily caches your credentials. 
+                <strong>To completely clear your session, please close this browser tab or window.</strong>
+            </p>
+        </div>
+    </div>
+
+    <!-- Action Modal -->
+    <div id="action-modal" class="overlay hidden">
+        <div class="glass-panel login-box" style="max-width: 500px;">
+            <h2 id="modal-title">Action Title</h2>
+            <p id="modal-desc">Description</p>
+            
+            <form id="action-form">
+                <div id="modal-inputs"></div>
+                <div id="modal-error" class="error-message"></div>
+                <div class="actions" style="margin-top: 1rem; justify-content: space-between;">
+                    <button type="button" class="btn-secondary" id="modal-cancel">Cancel</button>
+                    <button type="submit" class="btn-primary" id="modal-submit">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Main Dashboard -->
     <div id="dashboard" class="dashboard-container hidden">
         <!-- Sidebar Navigation -->
@@ -46,13 +74,16 @@
                     <span class="nav-icon">📊</span> Overview
                 </a>
                 <a href="#" class="nav-item" data-target="shipments">
-                    <span class="nav-icon">🚢</span> Active Shipments
+                    <span class="nav-icon">🚢</span> Shipments
                 </a>
                 <a href="#" class="nav-item" data-target="inventory">
-                    <span class="nav-icon">📦</span> Low Stock Alerts
+                    <span class="nav-icon">📦</span> Inventory
                 </a>
                 <a href="#" class="nav-item" data-target="vendors">
                     <span class="nav-icon">🤝</span> Vendors
+                </a>
+                <a href="#" class="nav-item" data-target="customs">
+                    <span class="nav-icon">📜</span> Customs
                 </a>
             </nav>
             
@@ -68,10 +99,9 @@
         <!-- Main Content Area -->
         <main class="main-content">
             <header class="topbar">
-                <h1>Logistics Overview</h1>
+                <h1 id="page-title">Logistics Overview</h1>
                 <div class="actions">
                     <button class="btn-icon">🔔 <span class="badge">3</span></button>
-                    <button class="btn-icon">⚙️</button>
                 </div>
             </header>
 
@@ -94,54 +124,107 @@
                         <div class="stat-trend">All services operational</div>
                     </div>
                 </div>
+            </section>
 
-                <div class="data-panels">
-                    <!-- Recent Shipments Panel -->
-                    <div class="glass-panel data-panel">
-                        <div class="panel-header">
-                            <h2>Recent Active Shipments</h2>
+            <!-- Shipments Section -->
+            <section id="section-shipments" class="content-section hidden">
+                <div class="glass-panel data-panel">
+                    <div class="panel-header">
+                        <h2>Active Shipments</h2>
+                        <div class="actions">
+                            <input type="text" id="track-input" placeholder="Tracking Number" style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(15,23,42,0.5); color: white;">
+                            <button class="btn-secondary btn-sm" id="btn-track">Track</button>
+                            <button class="btn-primary btn-sm" id="btn-create-shipment">Create Shipment</button>
                             <button class="btn-secondary btn-sm" id="refresh-shipments">Refresh</button>
                         </div>
-                        <div class="table-responsive">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Tracking #</th>
-                                        <th>Status</th>
-                                        <th>Origin</th>
-                                        <th>Destination</th>
-                                        <th>Est. Delivery</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="shipments-body">
-                                    <tr><td colspan="5" class="text-center">Loading...</td></tr>
-                                </tbody>
-                            </table>
+                    </div>
+                    <div id="track-result" style="margin-bottom: 1rem; color: var(--success);"></div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Tracking #</th>
+                                    <th>Status</th>
+                                    <th>Origin</th>
+                                    <th>Destination</th>
+                                    <th>Est. Delivery</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shipments-body">
+                                <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Inventory Section -->
+            <section id="section-inventory" class="content-section hidden">
+                <div class="glass-panel data-panel">
+                    <div class="panel-header">
+                        <h2>Low Stock Alerts</h2>
+                        <button class="btn-secondary btn-sm" id="refresh-inventory">Refresh</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>SKU</th>
+                                    <th>Name</th>
+                                    <th>Quantity</th>
+                                    <th>Threshold</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-body">
+                                <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Vendors Section -->
+            <section id="section-vendors" class="content-section hidden">
+                <div class="glass-panel data-panel">
+                    <div class="panel-header">
+                        <h2>Vendor Management</h2>
+                        <div class="actions">
+                            <input type="text" id="vendor-input" placeholder="Vendor ID (e.g. 1)" style="padding: 0.5rem; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(15,23,42,0.5); color: white;">
+                            <button class="btn-secondary btn-sm" id="btn-assess-vendor">Assess Performance</button>
                         </div>
                     </div>
+                    <div id="vendor-result" style="margin-top: 1rem;">
+                        <p class="text-muted">Enter a Vendor ID above to run an automated performance assessment.</p>
+                    </div>
+                </div>
+            </section>
 
-                    <!-- Low Stock Panel -->
-                    <div class="glass-panel data-panel">
-                        <div class="panel-header">
-                            <h2>Inventory Alerts</h2>
-                            <button class="btn-secondary btn-sm" id="refresh-inventory">Refresh</button>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>SKU</th>
-                                        <th>Name</th>
-                                        <th>Current Level</th>
-                                        <th>Reorder Point</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="inventory-body">
-                                    <tr><td colspan="5" class="text-center">Loading...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+            <!-- Customs Section -->
+            <section id="section-customs" class="content-section hidden">
+                <div class="glass-panel data-panel">
+                    <div class="panel-header">
+                        <h2>Approaching Customs Deadlines</h2>
+                        <button class="btn-secondary btn-sm" id="refresh-customs">Refresh</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Doc ID</th>
+                                    <th>Type</th>
+                                    <th>Shipment ID</th>
+                                    <th>Status</th>
+                                    <th>Deadline</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customs-body">
+                                <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>

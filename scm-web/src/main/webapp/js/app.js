@@ -80,7 +80,30 @@ function showDashboard() {
     loginOverlay.classList.add('hidden');
     dashboard.classList.remove('hidden');
     displayUser.textContent = authRole ? `User (${authRole})` : 'User';
-    loadOverview();
+    
+    // RBAC: Determine allowed sections based on role
+    const rolePermissions = {
+        'ADMIN': ['overview', 'shipments', 'inventory', 'vendors', 'customs'],
+        'LOGISTICS_COORDINATOR': ['overview', 'shipments', 'vendors', 'customs'],
+        'WAREHOUSE_MANAGER': ['overview', 'inventory'],
+        'CUSTOMS_AGENT': ['overview', 'shipments', 'customs'],
+        'VENDOR_REPRESENTATIVE': ['overview', 'shipments', 'inventory', 'vendors'],
+        'CUSTOMER': ['overview', 'shipments']
+    };
+    
+    const allowed = rolePermissions[authRole] || ['overview'];
+    
+    document.querySelectorAll('.nav-item').forEach(item => {
+        const target = item.getAttribute('data-target');
+        if (allowed.includes(target)) {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // Default to the first allowed view
+    document.querySelector(`.nav-item[data-target="${allowed[0]}"]`).click();
 }
 
 document.querySelectorAll('.nav-item').forEach(item => {
@@ -170,6 +193,34 @@ document.getElementById('btn-track').addEventListener('click', async () => {
         resultDiv.textContent = e.message;
         resultDiv.style.color = 'var(--danger)';
     }
+});
+
+document.getElementById('btn-create-shipment').addEventListener('click', () => {
+    openModal(
+        'Create New Shipment',
+        'Enter details to register a new shipment into the logistics network:',
+        [
+            { id: 'trackNum', label: 'Tracking Number', type: 'text', required: true },
+            { id: 'vendorId', label: 'Vendor ID (e.g. 1)', type: 'number', required: true },
+            { id: 'carrierId', label: 'Carrier ID (e.g. 1)', type: 'number', required: true },
+            { id: 'origin', label: 'Origin Country Code (e.g. CN)', type: 'text', required: true },
+            { id: 'dest', label: 'Destination Country Code (e.g. SE)', type: 'text', required: true },
+            { id: 'weight', label: 'Weight (kg)', type: 'number', required: true },
+            { id: 'estDate', label: 'Est. Delivery (YYYY-MM-DDTHH:MM:SS)', type: 'text', required: true }
+        ],
+        async (inputs) => {
+            await apiCall('/shipments', 'POST', {
+                trackingNumber: inputs.trackNum,
+                vendorId: parseInt(inputs.vendorId),
+                carrierId: parseInt(inputs.carrierId),
+                originCountry: inputs.origin,
+                destinationCountry: inputs.dest,
+                weightKg: parseFloat(inputs.weight),
+                estimatedDelivery: inputs.estDate
+            });
+            loadShipments();
+        }
+    );
 });
 
 async function loadShipments() {

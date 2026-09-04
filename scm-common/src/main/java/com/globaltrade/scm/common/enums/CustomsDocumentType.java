@@ -1,5 +1,4 @@
 package com.globaltrade.scm.common.enums;
-
 public enum CustomsDocumentType {
     COMMERCIAL_INVOICE,
     CERTIFICATE_OF_ORIGIN,

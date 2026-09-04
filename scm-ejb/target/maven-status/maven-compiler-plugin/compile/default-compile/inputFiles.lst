@@ -25,6 +25,7 @@ D:\Documents\AntiGravity\globaltrade-scm\scm-ejb\src\main\java\com\globaltrade\s
 D:\Documents\AntiGravity\globaltrade-scm\scm-ejb\src\main\java\com\globaltrade\scm\monitoring\MetricsRegistry.java
 D:\Documents\AntiGravity\globaltrade-scm\scm-ejb\src\main\java\com\globaltrade\scm\recovery\ExceptionRecoveryManager.java
 D:\Documents\AntiGravity\globaltrade-scm\scm-ejb\src\main\java\com\globaltrade\scm\recovery\RetryableOperation.java
+D:\Documents\AntiGravity\globaltrade-scm\scm-ejb\src\main\java\com\globaltrade\scm\security\PasswordGenerator.java
 D:\Documents\AntiGravity\globaltrade-scm\scm-ejb\src\main\java\com\globaltrade\scm\security\SecurityUtil.java
 D:\Documents\AntiGravity\globaltrade-scm\scm-ejb\src\main\java\com\globaltrade\scm\security\SupplyChainLoginModule.java
 D:\Documents\AntiGravity\globaltrade-scm\scm-ejb\src\main\java\com\globaltrade\scm\security\SupplyChainPrincipal.java

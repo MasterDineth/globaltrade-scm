@@ -1,31 +1,15 @@
 package com.globaltrade.scm.interceptor;
-
 import com.globaltrade.scm.monitoring.MetricsRegistry;
 import jakarta.ejb.EJB;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.InvocationContext;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-/**
- * Bound with {@code @Interceptors(PerformanceMonitoringInterceptor.class)}
- * at the METHOD level on specific delivery-time-sensitive operations
- * (shipment lookups, route optimization) rather than module-wide.
- * Unlike auditing, performance monitoring is only valuable -- and only
- * cheap enough to justify -- on the small set of methods that are
- * actually on a customer- or SLA-facing hot path; applying it class-wide
- * or module-wide would add {@code System.nanoTime()} + map-lookup
- * overhead to methods where nobody will ever look at the number.
- */
 public class PerformanceMonitoringInterceptor {
-
     private static final Logger LOGGER = Logger.getLogger(PerformanceMonitoringInterceptor.class.getName());
-    private static final long SLOW_THRESHOLD_MS = 1500L;
-
+    private static final long SLOW_THRESHOLD_MS = 0L;
     @EJB
     private MetricsRegistry metricsRegistry;
-
     @AroundInvoke
     public Object monitor(InvocationContext ctx) throws Exception {
         String methodName = ctx.getTarget().getClass().getSimpleName() + "#" + ctx.getMethod().getName();

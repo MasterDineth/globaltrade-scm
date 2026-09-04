@@ -1,3 +1,4 @@
 com\globaltrade\scm\recovery\ExceptionRecoveryManagerTest.class
+TestPassword.class
 com\globaltrade\scm\security\SecurityUtilTest.class
 com\globaltrade\scm\it\OrderProcessingWorkflowIT.class
